@@ -1,11 +1,4 @@
-<h1>
-  <picture height=23px>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-white.svg" height=23px />
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-black.svg" height=23px />
-    <img alt="Transmute logo, a small flask" src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-white.svg" height=23px />
-  </picture>
-  Transmute
-</h1>
+# Transmute
 
 ![GitHub Stars](https://img.shields.io/github/stars/transmute-app/transmute?style=flat)
 ![Last Commit](https://img.shields.io/github/last-commit/transmute-app/transmute)
@@ -36,9 +29,10 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
+
 | Service | Why Replace? |
-| ------- | --------------- |
-| [cloudconvert.com](https://cloudconvert.com/) |  File size limits, API is paid only, 3rd-party gets my files |
+| ------- | ------------ |
+| [cloudconvert.com](https://cloudconvert.com/) | File size limits, API is paid only, 3rd-party gets my files |
 | [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
 
