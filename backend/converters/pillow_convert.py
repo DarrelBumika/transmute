@@ -198,6 +198,11 @@ class PillowConverter(ConverterInterface):
             
             # Handle transparency for formats that don't support alpha
             output_fmt = self.output_type.lower()
+
+            # BLP only supports P (palette) mode
+            if output_fmt == 'blp' and img.mode != 'P':
+                img = img.convert('P')
+
             _no_alpha_formats = {'jpg', 'jpeg', 'pdf', 'sgi', 'bmp', 'ppm', 'pcx', 'gif', 'tga',
                                     'dib', 'msp', 'xbm', 'fli', 'flc', 'dcx'}
             if output_fmt in _no_alpha_formats and img.mode in ['RGBA', 'LA', 'P']:
