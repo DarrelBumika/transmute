@@ -31,6 +31,10 @@ class PyPandocConverter(ConverterInterface):
         'mediawiki',
         'asciidoc',
         'ipynb',
+        'fb2',
+        'muse',
+        'opml',
+        'dbk',
     }
     supported_output_formats: set = {
         'md',
@@ -47,6 +51,13 @@ class PyPandocConverter(ConverterInterface):
         'asciidoc',
         'pdf',
         'ipynb',
+        'textile',
+        'mediawiki',
+        'pptx',
+        'dbk',
+        'jira',
+        'muse',
+        'opml',
     }
 
     # Ordered list of PDF engines to try; the first one found on PATH wins.
@@ -70,6 +81,12 @@ class PyPandocConverter(ConverterInterface):
         'asciidoc': 'asciidoc',
         'pdf': 'pdf',
         'ipynb': 'ipynb',
+        'fb2': 'fb2',
+        'muse': 'muse',
+        'opml': 'opml',
+        'dbk': 'docbook',
+        'pptx': 'pptx',
+        'jira': 'jira',
     }
 
     def __init__(self, input_file: str, output_dir: str, input_type: str, output_type: str):
@@ -219,7 +236,7 @@ class PyPandocConverter(ConverterInterface):
                         "found on PATH."
                     )
                 extra_args.append(f'--pdf-engine={engine}')
-            if self.output_type.lower() in ('html',):
+            if self.output_type.lower() in ('html', 'revealjs', 'slidy', 's5', 'dzslides'):
                 extra_args.append('--standalone')
 
             pypandoc.convert_file(
