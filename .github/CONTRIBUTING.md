@@ -9,6 +9,15 @@ First off, thank you for your interest in contributing ❤️
 
 This project is intended to be a reliable, self-hosted tool, and contributions of all kinds are welcome: code, documentation, bug reports, ideas, and feedback.
 
+> [!CAUTION]
+> ## No Autonomous Agents or AI Assistants
+>
+> **Fully autonomous agents and AI coding assistants are not welcome contributors to this repository.**
+>
+> Contributions that are determined to have been generated or submitted by an autonomous agent or AI assistant (e.g. automated pull requests, AI-driven code generation tools acting without direct human authorship and review) will be **rejected without review**.
+>
+> All contributions must be authored and meaningfully reviewed by a real human being who takes responsibility for the changes. If you used AI tooling to assist your work, you are expected to have fully understood, reviewed, and validated every line before submitting.
+
 ---
 
 ## Ways to Contribute
@@ -81,12 +90,102 @@ npm run build
 - libmagic1: For filetype detection when there are no extensions
 - cairo: SVG interpreting / conversions
 - Drawio Desktop App: To render `.drawio` files
+- pandoc: For document conversions (markdown, docx, html, etc.)
+- pango: Required by weasyprint for PDF generation
 
 #### 3.4. Spin up the app locally
 
 `python3 backend/main.py`
 
 Feel free to reach out via issue if you hit any snags.
+
+---
+
+## Make Commands
+
+A `Makefile` is included to simplify common development tasks. Run `make help` to see all available targets.
+
+### Quick Reference
+
+| Command | Description |
+| --- | --- |
+| `make help` | Show all available commands |
+| `make install` | Install all dependencies (backend + frontend) |
+| `make dev` | Run backend and frontend dev servers concurrently |
+| `make build` | Build the frontend for production |
+| `make lint` | Run all linters (currently frontend ESLint) |
+| `make clean` | Remove build artifacts and caches |
+| `make docker` | Build and start the Docker dev environment |
+
+### Installation
+
+```bash
+# Install everything
+make install
+
+# Or install individually
+make install-backend    # pip install -r requirements.txt
+make install-frontend   # npm install in frontend/
+```
+
+### Development
+
+```bash
+# Start both backend (localhost:3313) and frontend (localhost:5173)
+make dev
+
+# Or run them individually
+make dev-backend
+make dev-frontend
+```
+
+### Building
+
+```bash
+# Build frontend for production
+make build
+```
+
+### Linting
+
+```bash
+# Run all linters
+make lint
+
+# Run just frontend ESLint
+make lint-frontend
+```
+
+### Docker
+
+```bash
+# Build image and start containers (dev)
+make docker
+
+# Or run steps individually
+make docker-build   # Build the image
+make docker-up      # Start containers
+make docker-down    # Stop containers
+make docker-logs    # Tail container logs
+
+# Start production containers (pulls from registry)
+make docker-prod
+```
+
+### Cleanup
+
+```bash
+# Remove build artifacts (frontend/dist, __pycache__, etc.)
+make clean
+
+# Remove local data (uploads, outputs, db) — prompts for confirmation
+make clean-data
+
+# Remove everything (artifacts + data + node_modules)
+make clean-all
+```
+
+> **Note:** The `PYTHON` variable defaults to `python3`. If your system uses a different binary, override it with: `make PYTHON=python dev`
 
 
 ---

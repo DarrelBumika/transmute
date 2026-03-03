@@ -1,22 +1,14 @@
-<h1>
-  <picture height=23px>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-white.svg" height=23px />
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-black.svg" height=23px />
-    <img alt="Transmute logo, a small flask" src="https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/assets/brand/beaker-white.svg" height=23px />
-  </picture>
-  Transmute
-</h1>
+# Transmute
 
-[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/transmute-app/transmute/blob/main/LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://github.com/transmute-app/transmute/blob/main/docker-compose.yml)
+![GitHub Stars](https://img.shields.io/github/stars/transmute-app/transmute?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/transmute-app/transmute)
+![License](https://img.shields.io/github/license/transmute-app/transmute)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![Status](https://img.shields.io/badge/status-active%20development-yellow)
 
 The self-hosted file converter that lets you convert anything, anywhere.
 
 This application is under active development, want to support us? Give us a star or jump in and contribute!
-
-> [!NOTE]
-> **This project is human-led and human-reviewed.** Every line of code is understood, validated, and owned by a real person. This is not a vibe-coded AI slop project, and automated agents or fully AI-generated contributions are not welcome here. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for more details
 
 ## Screenshots
 | Converter / Home | File Lists | Settings |
@@ -37,9 +29,10 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 
 ## What Does Transmute Replace?
 *For the record, I love all of these services and use them all frequently. Transmute is not up to par with any of them yet. But it will be!*
+
 | Service | Why Replace? |
-| ------- | --------------- |
-| [cloudconvert.com](https://cloudconvert.com/) |  File size limits, API is paid only, 3rd-party gets my files |
+| ------- | ------------ |
+| [cloudconvert.com](https://cloudconvert.com/) | File size limits, API is paid only, 3rd-party gets my files |
 | [freeconvert.com](https://www.freeconvert.com/) | File size limits, 3rd-party gets my files |
 | [cconvertio.co](https://convertio.co/) | File size limits, 3rd-party gets my files |
 
@@ -54,7 +47,3 @@ wget "https://raw.githubusercontent.com/transmute-app/transmute/refs/heads/main/
 
 ## API Documentation
 When the app is running the API docs are available at http://TRANSMUTE_IP:3313/api/docs
-
-## Contributing
-
-Contributions are welcome! This project is human-driven — autonomous agents and AI assistants are not welcome contributors and such submissions will be rejected. See the [contributing guide](https://github.com/transmute-app/transmute?tab=contributing-ov-file#no-autonomous-agents-or-ai-assistants) for details.

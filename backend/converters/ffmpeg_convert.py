@@ -9,28 +9,41 @@ from core import validate_safe_path
 
 class FFmpegConverter(ConverterInterface):
     video_formats: set = {
-        'mp4', 
-        'avi', 
-        'mov', 
-        'mkv', 
-        'webm', 
-        'flv', 
-        'wmv', 
-        'mpg', 
-        'mpeg', 
-        'm4v', 
-        'gif'
-      }
+        'mp4',
+        'avi',
+        'mov',
+        'mkv',
+        'webm',
+        'flv',
+        'wmv',
+        'mpg',
+        'mpeg',
+        'm4v',
+        'gif',
+        'ts',
+        '3gp',
+        'ogv',
+        'asf',
+        'f4v',
+    }
     audio_formats: set = {
         'mp3',
         'wav',
         'aac',
         'flac',
-        'ogg',
+        # 'ogg' excluded: ambiguous container (can be audio or video), use oga for
+        # audio-only OGG or ogv for OGG video instead
         'wma',
         'm4a',
-        'opus'
-      }
+        'opus',
+        'aiff',
+        'mp2',
+        'ac3',
+        # 'amr' excluded: requires libopencore-amrnb which is not compiled
+        # into standard FFmpeg builds (encoder amr_nb unavailable)
+        'oga',
+        'mka',
+    }
     supported_input_formats: set = video_formats | audio_formats
     supported_output_formats: set = set(supported_input_formats)
 
@@ -69,7 +82,7 @@ class FFmpegConverter(ConverterInterface):
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def __can_convert(self) -> bool:
+    def can_convert(self) -> bool:
         """
         Check if the input file can be converted to the output format.
         
@@ -129,7 +142,7 @@ class FFmpegConverter(ConverterInterface):
             RuntimeError: If FFmpeg conversion fails
         """
         # Validate conversion is possible
-        if not self.__can_convert():
+        if not self.can_convert():
             raise ValueError(
                 f"Cannot convert {self.input_type} to {self.output_type}. "
                 f"Audio-only formats cannot be converted to video formats."
@@ -154,15 +167,29 @@ class FFmpegConverter(ConverterInterface):
         validate_safe_path(self.input_file)
         cmd.extend(['-i', self.input_file])
         
+        # When the output is an audio-only format, strip any video stream.
+        # This prevents FFmpeg from attempting to encode video with a codec that
+        # may not be available (e.g. theora for ogg, amr_nb for amr).
+        if self.output_type in self.audio_formats:
+            cmd.append('-vn')
+
         # Add quality settings for video conversions
-        if quality and self.output_type in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+        _quality_video_formats = {'mp4', 'avi', 'mov', 'mkv', 'webm', 'ts', '3gp', 'ogv', 'f4v'}
+        if quality and self.output_type in _quality_video_formats:
             if quality == 'high':
                 cmd.extend(['-crf', '18', '-preset', 'slow'])
             elif quality == 'medium':
                 cmd.extend(['-crf', '23', '-preset', 'medium'])
             elif quality == 'low':
                 cmd.extend(['-crf', '28', '-preset', 'fast'])
-        
+
+        # 3GP/3G2 default to H.263 video (limited to specific small resolutions)
+        # and amr_nb audio (requires libopencore-amrnb, not in standard FFmpeg builds).
+        # Force H.264 + AAC instead, which modern 3GP (3GPP Release 5+) fully supports.
+        _mobile_container_formats = {'3gp', '3g2'}
+        if self.output_type in _mobile_container_formats:
+            cmd.extend(['-c:v', 'libx264', '-c:a', 'aac'])
+
         cmd.append(output_file)
         
         # Execute FFmpeg command

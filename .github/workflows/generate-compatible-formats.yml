@@ -1,4 +1,4 @@
-name: Generate OpenAPI Schema
+name: Generate Compatible Formats
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   bandit-scan:
-    name: Generate OpenAPI Schema
+    name: Generate Compatible Formats
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,19 +27,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Export OpenAPI Schema
+      - name: Export Compatible Formats
         run: |
-          python backend/export_openapi.py --output openapi.json
+          python backend/export_supported_conversions.py --output supported_conversions.json
       
       - name: Commit to DIFFERENT repository
         env:
           GITHUB_TOKEN: ${{ secrets.TRANSMUTE_AUTOMATED_COMMITS }}
         run: |
-          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/transmute-app/openapi-specifications.git target-repo
-          cp openapi.json target-repo/openapi.json
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/transmute-app/conversion-compatibility.git target-repo
+          cp supported_conversions.json target-repo/supported_conversions.json
           cd target-repo
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git add openapi.json
-          git diff --cached --quiet || git commit -m "chore: update openapi.json"
+          git add supported_conversions.json
+          git diff --cached --quiet || git commit -m "chore: update supported_conversions.json"
           git push
+
