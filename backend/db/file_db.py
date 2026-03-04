@@ -114,12 +114,12 @@ class FileDB:
             with the given ID exists.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE id = ?", (file_id,))  # nosec B608
         row = cursor.fetchone()
         if row is None:
             return None
-        columns = [column[0] for column in cursor.description]
-        return dict(zip(columns, row))
+        return dict(row)
 
     def list_files(self) -> list[dict]:
         """Retrieve metadata for all files in the database.
@@ -129,10 +129,10 @@ class FileDB:
             Returns an empty list if no files are stored.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
         rows = cursor.fetchall()
-        columns = [column[0] for column in cursor.description]
-        return [dict(zip(columns, row)) for row in rows]
+        return [dict(row) for row in rows]
 
     def delete_file_metadata(self, file_id: str) -> None:
         """Delete the metadata record for a specific file.

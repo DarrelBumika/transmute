@@ -109,13 +109,13 @@ class SettingsDB:
                     )
                 )
 
-    def _row_to_dict(self, row: tuple) -> dict:
-        """Convert a raw database row tuple to a settings dictionary.
+    @staticmethod
+    def _row_to_dict(row: dict) -> dict:
+        """Normalise a raw database row dict into typed application settings.
 
         Args:
-            row: A tuple representing a single row from the settings table,
-                with columns (id, theme, auto_download, keep_originals,
-                cleanup_enabled, cleanup_ttl_minutes).
+            row: A dictionary produced by the Row-factory cursor, keyed by
+                column name.
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
@@ -123,11 +123,11 @@ class SettingsDB:
             cleanup_ttl_minutes (int).
         """
         return {
-            "theme":          row[1],
-            "auto_download":  bool(row[2]),
-            "keep_originals": bool(row[3]),
-            "cleanup_enabled": bool(row[4]),
-            "cleanup_ttl_minutes": int(row[5]),
+            "theme":               row["theme"],
+            "auto_download":       bool(row["auto_download"]),
+            "keep_originals":      bool(row["keep_originals"]),
+            "cleanup_enabled":     bool(row["cleanup_enabled"]),
+            "cleanup_ttl_minutes": int(row["cleanup_ttl_minutes"]),
         }
 
     def get_settings(self) -> dict:
@@ -135,10 +135,12 @@ class SettingsDB:
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            keep_originals (bool), and cleanup_ttl_minutes (int). Falls back to default values if
+            keep_originals (bool), cleanup_enabled (bool), and
+            cleanup_ttl_minutes (int). Falls back to default values if
             the settings row is missing.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(
             f"SELECT * FROM {self.TABLE_NAME} WHERE id = ?",  # nosec B608
             (_SETTINGS_ROW_ID,)

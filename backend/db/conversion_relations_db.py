@@ -110,11 +110,12 @@ class ConversionRelationsDB:
             for the given original file ID.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE original_file_id = ?", (original_file_id,))  # nosec B608
         row = cursor.fetchone()
         if row is None:
             return None
-        return row[1]
+        return row['converted_file_id']
 
     def get_original_from_conversion(self, converted_file_id: str) -> Optional[str]:
         """Retrieve the original file ID associated with a converted file.
@@ -127,11 +128,12 @@ class ConversionRelationsDB:
             for the given converted file ID.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(f"SELECT * FROM {self.TABLE_NAME} WHERE converted_file_id = ?", (converted_file_id,))  # nosec B608
         row = cursor.fetchone()
         if row is None:
             return None
-        return row[0]
+        return row['original_file_id']
 
     def delete_relation_by_original(self, original_file_id: str) -> None:
         """Delete all conversion relations associated with an original file.
@@ -167,19 +169,10 @@ class ConversionRelationsDB:
             Returns an empty list if no relations are stored.
         """
         cursor = self.conn.cursor()
+        cursor.row_factory = sqlite3.Row
         cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")  # nosec B608
         rows = cursor.fetchall()
-        return [
-            {
-                'original_file_id': row[0],
-                'converted_file_id': row[1],
-                'original_filename': row[2],
-                'original_media_type': row[3],
-                'original_extension': row[4],
-                'original_size_bytes': row[5]
-            }
-            for row in rows
-        ]
+        return [dict(row) for row in rows]
 
     def close(self) -> None:
         """Close the database connection."""
