@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from converters import ConverterInterface
 from registry import registry
 from core import get_settings, sanitize_extension, delete_file_and_metadata, validate_safe_path
-from db import ConversionDB, FileDB, ConversionRelationsDB
-from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db
+from db import ConversionDB, FileDB, ConversionRelationsDB, SettingsDB
+from api.deps import get_file_db, get_conversion_db, get_conversion_relations_db, get_settings_db
 from api.schemas import ConversionRequest, ConversionListResponse, FileMetadata, ErrorResponse, FileDeleteResponse
 
 
@@ -79,7 +79,8 @@ async def create_conversion(
     conversion_request: ConversionRequest,
     file_db: FileDB = Depends(get_file_db),
     conversion_db: ConversionDB = Depends(get_conversion_db),
-    conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db)
+    conversion_relations_db: ConversionRelationsDB = Depends(get_conversion_relations_db),
+    settings_db: SettingsDB = Depends(get_settings_db)
 ):
     """Create a new conversion for a previously uploaded file."""
     og_id = conversion_request.id
@@ -125,7 +126,8 @@ async def create_conversion(
         'original_extension': og_metadata['extension'],
         'original_size_bytes': og_metadata['size_bytes']
     })
-
+    if settings_db.get_settings().get("keep_originals", True) is False:
+        delete_file_and_metadata(file_id=og_id, file_db=file_db)
     return converted_metadata
 
 @router.delete(
