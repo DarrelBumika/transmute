@@ -64,12 +64,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     fetch('/api/settings')
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
-        const name = (data?.theme ?? 'rubedo') as ThemeName
-        setTheme(name)
-        setKeepOriginals(data?.keep_originals ?? true)
+        if (!data) return
+        const name = (data.theme ?? 'rubedo') as ThemeName
+        // Only update state if the value actually changed to avoid re-render cascades
+        setThemeState(prev => {
+          if (prev !== name) {
+            applyThemeToDom(name)
+            return name
+          }
+          return prev
+        })
+        setKeepOriginalsState(prev => {
+          const next = data.keep_originals ?? true
+          if (prev !== next) {
+            try { localStorage.setItem(KEEP_ORIGINALS_KEY, String(next)) } catch { /* storage unavailable */ }
+            return next
+          }
+          return prev
+        })
       })
       .catch(() => {/* keep whatever localStorage had */})
-  }, [setTheme, setKeepOriginals])
+  }, [])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, keepOriginals, setKeepOriginals }}>
