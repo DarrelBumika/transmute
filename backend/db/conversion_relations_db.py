@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Optional
-from core import get_settings, validate_sql_identifier
+from core import get_settings, validate_sql_identifier, migrate_table_columns
 
 '''
 Anywhere you see # nosec B608, it is marking a Bandit false positive. The table 
@@ -52,6 +52,16 @@ class ConversionRelationsDB:
                 original_size_bytes INTEGER
                 )
             """)
+
+        # Ensure every expected column exists (handles older DB schemas)
+        migrate_table_columns(self.conn, self.TABLE_NAME, {
+            "original_file_id":   "TEXT",
+            "converted_file_id":  "TEXT",
+            "original_filename":  "TEXT",
+            "original_media_type": "TEXT",
+            "original_extension": "TEXT",
+            "original_size_bytes": "INTEGER",
+        })
 
     def insert_conversion_relation(self, metadata: dict) -> None:
         """Insert a new conversion relation record into the database.

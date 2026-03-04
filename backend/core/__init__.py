@@ -7,7 +7,8 @@ from .helper_functions import (
     delete_file_and_metadata,
     validate_sql_identifier,
     validate_safe_path,
-    validate_hexadecimal_filename
+    validate_hexadecimal_filename,
+    migrate_table_columns,
 )
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "media_type_aliases",
     "validate_sql_identifier",
     "validate_safe_path",
-    "validate_hexadecimal_filename"
+    "validate_hexadecimal_filename",
+    "migrate_table_columns",
 ]

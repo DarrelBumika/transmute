@@ -24,8 +24,14 @@ def file_cleanup_logic(file_db: FileDB, conversion_relations_db: ConversionRelat
     """
     now = time.time()
     settings_db = SettingsDB()
-    ttl_minutes = settings_db.get_settings().get("cleanup_ttl_minutes", 60)
+    settings = settings_db.get_settings()
+    cleanup_enabled = settings.get("cleanup_enabled", True)
+    ttl_minutes = settings.get("cleanup_ttl_minutes", 60)
     settings_db.close()
+
+    if not cleanup_enabled:
+        return
+
     all_files = file_db.list_files()
 
     for file in all_files:

@@ -1,5 +1,6 @@
 import os
 import re
+import sqlite3
 import mimetypes
 import magic
 
@@ -11,6 +12,34 @@ if TYPE_CHECKING:
     from db import FileDB
     
 from core.settings import get_settings
+
+
+def migrate_table_columns(
+    conn: sqlite3.Connection,
+    table_name: str,
+    expected_columns: dict[str, str],
+) -> None:
+    """Add any missing columns to an existing SQLite table.
+
+    Compares the columns currently present in *table_name* against
+    *expected_columns* and issues ``ALTER TABLE … ADD COLUMN`` for each
+    one that is absent.  This allows older databases to be transparently
+    upgraded when new columns are introduced.
+
+    Args:
+        conn: An open SQLite connection.
+        table_name: The (already-validated) table name to inspect.
+        expected_columns: A mapping of ``column_name`` to its full SQL
+            column definition (e.g. ``"INTEGER NOT NULL DEFAULT 1"``).
+    """
+    cursor = conn.execute(f"PRAGMA table_info({table_name})")  # nosec B608
+    existing = {row[1] for row in cursor.fetchall()}
+    with conn:
+        for col_name, col_def in expected_columns.items():
+            if col_name not in existing:
+                conn.execute(
+                    f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"  # nosec B608
+                )
 
 
 def validate_sql_identifier(identifier: str) -> str:

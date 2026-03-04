@@ -1,6 +1,6 @@
 import sqlite3
 from enum import Enum
-from core import get_settings, validate_sql_identifier
+from core import get_settings, validate_sql_identifier, migrate_table_columns
 
 '''
 Anywhere you see # nosec B608, it is marking a Bandit false positive. The table 
@@ -26,6 +26,7 @@ _DEFAULT_SETTINGS = {
     "theme":            Theme.RUBEDO.value,
     "auto_download":    False,
     "keep_originals":   True,
+    "cleanup_enabled":  True,
     "cleanup_ttl_minutes": 60
 }
 
@@ -72,9 +73,19 @@ class SettingsDB:
                     theme          TEXT    NOT NULL DEFAULT '{Theme.RUBEDO.value}',
                     auto_download  INTEGER NOT NULL DEFAULT 0,
                     keep_originals INTEGER NOT NULL DEFAULT 1,
+                    cleanup_enabled INTEGER NOT NULL DEFAULT 1,
                     cleanup_ttl_minutes INTEGER NOT NULL DEFAULT 60
                 )
             """)  # nosec B608
+
+        # Ensure every expected column exists (handles older DB schemas)
+        migrate_table_columns(self.conn, self.TABLE_NAME, {
+            "theme":               f"TEXT NOT NULL DEFAULT '{Theme.RUBEDO.value}'",
+            "auto_download":       "INTEGER NOT NULL DEFAULT 0",
+            "keep_originals":      "INTEGER NOT NULL DEFAULT 1",
+            "cleanup_enabled":     "INTEGER NOT NULL DEFAULT 1",
+            "cleanup_ttl_minutes": "INTEGER NOT NULL DEFAULT 60",
+        })  # nosec B608
 
     def _seed_defaults(self) -> None:
         """Insert the default settings row if it does not already exist."""
@@ -86,13 +97,14 @@ class SettingsDB:
         if cursor.fetchone() is None:
             with self.conn:
                 self.conn.execute(
-                    f"INSERT INTO {self.TABLE_NAME} (id, theme, auto_download, keep_originals, cleanup_ttl_minutes) "  # nosec B608
-                    f"VALUES (?, ?, ?, ?, ?)",
+                    f"INSERT INTO {self.TABLE_NAME} (id, theme, auto_download, keep_originals, cleanup_enabled, cleanup_ttl_minutes) "  # nosec B608
+                    f"VALUES (?, ?, ?, ?, ?, ?)",
                     (
                         _SETTINGS_ROW_ID,
                         _DEFAULT_SETTINGS["theme"],
                         int(_DEFAULT_SETTINGS["auto_download"]),
                         int(_DEFAULT_SETTINGS["keep_originals"]),
+                        int(_DEFAULT_SETTINGS["cleanup_enabled"]),
                         int(_DEFAULT_SETTINGS["cleanup_ttl_minutes"]),
                     )
                 )
@@ -102,17 +114,20 @@ class SettingsDB:
 
         Args:
             row: A tuple representing a single row from the settings table,
-                with columns (id, theme, auto_download, keep_originals, cleanup_ttl_minutes).
+                with columns (id, theme, auto_download, keep_originals,
+                cleanup_enabled, cleanup_ttl_minutes).
 
         Returns:
             A dictionary with keys theme (str), auto_download (bool),
-            keep_originals (bool), and cleanup_ttl_minutes (int).
+            keep_originals (bool), cleanup_enabled (bool), and
+            cleanup_ttl_minutes (int).
         """
         return {
             "theme":          row[1],
             "auto_download":  bool(row[2]),
             "keep_originals": bool(row[3]),
-            "cleanup_ttl_minutes": int(row[4]),
+            "cleanup_enabled": bool(row[4]),
+            "cleanup_ttl_minutes": int(row[5]),
         }
 
     def get_settings(self) -> dict:
@@ -159,7 +174,7 @@ class SettingsDB:
                 Theme enum member.
         """
         # Prevent SQL injection by allowing only known columns
-        allowed = {"theme", "auto_download", "keep_originals", "cleanup_ttl_minutes"}
+        allowed = {"theme", "auto_download", "keep_originals", "cleanup_enabled", "cleanup_ttl_minutes"}
         filtered = {k: v for k, v in updates.items() if k in allowed}
 
         if not filtered:
@@ -177,6 +192,8 @@ class SettingsDB:
             filtered["auto_download"] = int(bool(filtered["auto_download"]))
         if "keep_originals" in filtered:
             filtered["keep_originals"] = int(bool(filtered["keep_originals"]))
+        if "cleanup_enabled" in filtered:
+            filtered["cleanup_enabled"] = int(bool(filtered["cleanup_enabled"]))
         if "cleanup_ttl_minutes" in filtered:
             filtered["cleanup_ttl_minutes"] = int(filtered["cleanup_ttl_minutes"])
 

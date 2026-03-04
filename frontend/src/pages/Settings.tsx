@@ -39,6 +39,7 @@ interface AppSettings {
   theme: string
   auto_download: boolean
   keep_originals: boolean
+  cleanup_enabled: boolean
   cleanup_ttl_minutes: number
 }
 
@@ -46,6 +47,7 @@ function Settings() {
   const { theme, setTheme, setKeepOriginals } = useTheme()
   const [autoDownload, setAutoDownload] = useState(false)
   const [saveOriginals, setSaveOriginals] = useState(true)
+  const [cleanupEnabled, setCleanupEnabled] = useState(true)
   const [cleanupTtl, setCleanupTtl] = useState(60)
   const [themeOpen, setThemeOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -71,6 +73,7 @@ function Settings() {
         setTheme(data.theme as ThemeName)
         setAutoDownload(data.auto_download)
         setSaveOriginals(data.keep_originals)
+        setCleanupEnabled(data.cleanup_enabled)
         setCleanupTtl(data.cleanup_ttl_minutes)
         setLoaded(true)
       })
@@ -94,7 +97,7 @@ function Settings() {
       const response = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals, cleanup_ttl_minutes: cleanupTtl }),
+        body: JSON.stringify({ theme, auto_download: autoDownload, keep_originals: saveOriginals, cleanup_enabled: cleanupEnabled, cleanup_ttl_minutes: cleanupTtl }),
       })
       if (!response.ok) throw new Error('Failed to save settings')
       setKeepOriginals(saveOriginals)
@@ -258,6 +261,22 @@ function Settings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-text font-medium">Cleanup TTL</p>
+                  <p className="text-text-muted text-sm">Automatically clean up uploads & conversions after a set time</p>
+                </div>
+                <button
+                  onClick={() => setCleanupEnabled(v => !v)}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${cleanupEnabled ? 'bg-success' : 'bg-surface-dark border border-surface-light'}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${cleanupEnabled ? 'translate-x-6' : 'translate-x-0'}`}
+                  />
+                </button>
+              </div>
+
+              {cleanupEnabled && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-text font-medium">Cleanup Interval</p>
                   <p className="text-text-muted text-sm">Minutes before uploads & conversions are cleaned up</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -284,6 +303,7 @@ function Settings() {
                   <span className="text-text-muted text-sm">min</span>
                 </div>
               </div>
+              )}
             </div>
           </section>
 
