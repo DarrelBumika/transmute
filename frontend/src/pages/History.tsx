@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
+import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 
 interface OriginalFileInfo {
   id: string
@@ -29,6 +30,7 @@ function History() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingSelected, setDeletingSelected] = useState(false)
   const [downloadingSelected, setDownloadingSelected] = useState(false)
+  const [previewConversion, setPreviewConversion] = useState<ConversionRecord | null>(null)
 
   useEffect(() => {
     const fetchConversions = async () => {
@@ -241,6 +243,7 @@ function History() {
                 conversion: conversionInfo,
                 onDownload: () => handleDownload(conversion),
                 onDelete: () => handleDelete(conversion.id),
+                onPreview: isPreviewable(conversion.media_type) ? () => { const name = conversion.original_filename || 'download'; const dot = name.lastIndexOf('.'); const base = dot > 0 ? name.substring(0, dot) : name; setPreviewConversion({ ...conversion, original_filename: base + (conversion.extension || '') }) } : undefined,
                 isDeleting: deletingId === conversion.id,
                 isDownloading: downloadingId === conversion.id,
               }
@@ -249,6 +252,15 @@ function History() {
             selectedIds={selectedIds}
             onToggleSelect={toggleSelection}
             onToggleSelectAll={toggleSelectAll}
+          />
+        )}
+
+        {previewConversion && (
+          <PreviewModal
+            fileId={previewConversion.id}
+            filename={previewConversion.original_filename}
+            mediaType={previewConversion.media_type}
+            onClose={() => setPreviewConversion(null)}
           />
         )}
       </div>

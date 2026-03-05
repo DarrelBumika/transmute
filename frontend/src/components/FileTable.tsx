@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash } from 'react-icons/fa'
+import { FaCheckSquare, FaSquare, FaSort, FaSortUp, FaSortDown, FaDownload, FaTrash, FaEye } from 'react-icons/fa'
 
 export interface FileInfo {
   id: string
@@ -28,6 +28,7 @@ export interface FileTableRow {
   onFormatChange?: (format: string) => void
   onDelete?: () => void
   onDownload?: () => void
+  onPreview?: () => void
   isDeleting?: boolean
   isDownloading?: boolean
 }
@@ -121,7 +122,7 @@ function FileTable({
     return base + (row.conversion.extension || '')
   }
 
-  const hasActions = rows.some(r => r.onDownload || r.onDelete)
+  const hasActions = rows.some(r => r.onDownload || r.onDelete || r.onPreview)
 
   if (rows.length === 0) return null
 
@@ -246,6 +247,15 @@ function FileTable({
               {hasActions && (
                 <td className="px-4 py-3">
                   <div className="flex gap-1.5 justify-end">
+                    {row.onPreview && (
+                      <button
+                        onClick={row.onPreview}
+                        className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-dark transition duration-200"
+                        title="Preview"
+                      >
+                        <FaEye className="text-sm" />
+                      </button>
+                    )}
                     {row.onDownload && row.conversion && (
                       <button
                         onClick={row.onDownload}

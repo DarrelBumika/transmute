@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import FileTable, { FileInfo, ConversionInfo } from '../components/FileTable'
+import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 
 interface PendingFile {
   file: FileInfo
@@ -28,6 +29,7 @@ function Converter() {
   const [dragOver, setDragOver] = useState(false)
   const [defaultFormats, setDefaultFormats] = useState<Record<string, string>>({})
   const [formatAliases, setFormatAliases] = useState<Record<string, string>>({})
+  const [previewFile, setPreviewFile] = useState<{ id: string; filename: string; mediaType: string } | null>(null)
 
   // Load auto-download setting and default format mappings
   useEffect(() => {
@@ -449,6 +451,7 @@ function Converter() {
                   selectedFormat: pf.selectedFormat,
                   onFormatChange: (format: string) => handleFormatChange(pf.file.id, format),
                   onDelete: () => handleDelete(pf.file.id, true),
+                  onPreview: isPreviewable(pf.file.media_type) ? () => setPreviewFile({ id: pf.file.id, filename: pf.file.original_filename, mediaType: pf.file.media_type }) : undefined,
                   isDeleting: deletingId === pf.file.id,
                 }))}
                 isPending={true}
@@ -490,11 +493,21 @@ function Converter() {
                 conversion: cc.conversion,
                 onDownload: () => handleDownload(cc.conversion),
                 onDelete: () => handleDelete(cc.file.id, false),
+                onPreview: isPreviewable(cc.conversion.media_type) ? () => { const name = cc.file.original_filename || 'download'; const dot = name.lastIndexOf('.'); const base = dot > 0 ? name.substring(0, dot) : name; setPreviewFile({ id: cc.conversion.id, filename: base + (cc.conversion.extension || ''), mediaType: cc.conversion.media_type }) } : undefined,
                 isDeleting: deletingId === cc.file.id,
                 isDownloading: downloadingId === cc.conversion.id,
               }))}
               showDate={false}
             />          </div>
+        )}
+
+        {previewFile && (
+          <PreviewModal
+            fileId={previewFile.id}
+            filename={previewFile.filename}
+            mediaType={previewFile.mediaType}
+            onClose={() => setPreviewFile(null)}
+          />
         )}
       </div>
     </div>

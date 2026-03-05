@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import FileTable, { FileInfo } from '../components/FileTable'
+import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 
 function Files() {
   const [files, setFiles] = useState<FileInfo[]>([])
@@ -9,6 +10,7 @@ function Files() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deletingSelected, setDeletingSelected] = useState(false)
+  const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -147,6 +149,7 @@ function Files() {
               id: file.id,
               file,
               onDelete: () => handleDelete(file.id),
+              onPreview: isPreviewable(file.media_type) ? () => setPreviewFile(file) : undefined,
               isDeleting: deletingId === file.id,
             }))}
             isPending={true}
@@ -154,6 +157,15 @@ function Files() {
             selectedIds={selectedIds}
             onToggleSelect={toggleSelection}
             onToggleSelectAll={toggleSelectAll}
+          />
+        )}
+
+        {previewFile && (
+          <PreviewModal
+            fileId={previewFile.id}
+            filename={previewFile.original_filename}
+            mediaType={previewFile.media_type}
+            onClose={() => setPreviewFile(null)}
           />
         )}
       </div>
