@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from db import DefaultFormatsDB
 from api.deps import get_default_formats_db
 from api.schemas import DefaultFormatMapping, DefaultFormatListResponse
+from core import media_type_aliases
 
 router = APIRouter(prefix="/default-formats", tags=["default-formats"])
 
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/default-formats", tags=["default-formats"])
 )
 def get_default_formats(db: DefaultFormatsDB = Depends(get_default_formats_db)):
     """Return all user-configured default format mappings."""
-    return {"defaults": db.get_all()}
+    return {"defaults": db.get_all(), "aliases": media_type_aliases}
 
 
 @router.put(

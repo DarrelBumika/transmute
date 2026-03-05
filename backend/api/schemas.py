@@ -107,3 +107,4 @@ class DefaultFormatMapping(BaseModel):
 
 class DefaultFormatListResponse(BaseModel):
     defaults: list[DefaultFormatMapping] = Field(..., description="List of default format mappings")
+    aliases: dict[str, str] = Field(..., description="Format alias map (e.g. jpg -> jpeg)")

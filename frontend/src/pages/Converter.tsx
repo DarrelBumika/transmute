@@ -27,6 +27,7 @@ function Converter() {
   const [autoDownload, setAutoDownload] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [defaultFormats, setDefaultFormats] = useState<Record<string, string>>({})
+  const [formatAliases, setFormatAliases] = useState<Record<string, string>>({})
 
   // Load auto-download setting and default format mappings
   useEffect(() => {
@@ -36,10 +37,11 @@ function Converter() {
       .catch(() => {})
     fetch('/api/default-formats')
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then((data: { defaults: { input_format: string; output_format: string }[] }) => {
+      .then((data: { defaults: { input_format: string; output_format: string }[]; aliases: Record<string, string> }) => {
         const map: Record<string, string> = {}
         for (const d of data.defaults) map[d.input_format] = d.output_format
         setDefaultFormats(map)
+        setFormatAliases(data.aliases || {})
       })
       .catch(() => {})
   }, [])
@@ -53,7 +55,8 @@ function Converter() {
           ? [...file.compatible_formats].sort()
           : []
         const inputExt = file.extension?.replace(/^\./, '') || ''
-        const userDefault = defaultFormats[inputExt]
+        const normalizedExt = formatAliases[inputExt] || inputExt
+        const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
         const selectedFormat = (userDefault && sortedFormats.includes(userDefault))
           ? userDefault
           : sortedFormats[0] || ''
@@ -66,7 +69,7 @@ function Converter() {
       // Clear the location state to prevent re-adding on refresh
       navigate(location.pathname, { replace: true })
     }
-  }, [location.state, location.pathname, navigate, defaultFormats])
+  }, [location.state, location.pathname, navigate, defaultFormats, formatAliases])
 
   const processFiles = async (files: File[]) => {
     if (files.length === 0) return
@@ -103,7 +106,8 @@ function Converter() {
         ? [...fileInfo.compatible_formats].sort()
         : []
       const inputExt = fileInfo.extension?.replace(/^\./, '') || ''
-      const userDefault = defaultFormats[inputExt]
+      const normalizedExt = formatAliases[inputExt] || inputExt
+      const userDefault = defaultFormats[normalizedExt] || defaultFormats[inputExt]
       const defaultFormat = (userDefault && sortedFormats.includes(userDefault))
         ? userDefault
         : sortedFormats[0] || ''
