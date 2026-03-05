@@ -67,16 +67,36 @@ Examples:
 * `fix/job-progress`
 * `docs/api-clarification`
 
-### 3. Build and Run the Docker Image (Recommended)
+### 3. Commit Messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages:
+
+| Prefix    | Use for                          |
+| --------- | -------------------------------- |
+| `feat:`   | New features                     |
+| `fix:`    | Bug fixes                        |
+| `docs:`   | Documentation changes            |
+| `style:`  | Formatting, whitespace, etc.     |
+| `refactor:` | Code changes that aren't fixes or features |
+| `test:`   | Adding or updating tests         |
+| `chore:`  | Build tasks, CI, dependencies    |
+
+Examples:
+
+* `feat: add TIFF to WebP conversion`
+* `fix: handle empty file extension on upload`
+* `docs: update API examples in README`
+
+### 4. Build and Run the Docker Image (Recommended)
 `docker compose -f docker-compose-dev.yml up -d`
 
-### 3. Alternatively, Run Directly (Not Recommended)
+### 4. Alternatively, Run Directly (Not Recommended)
 
-#### 3.1. Install Python dependencies
+#### 4.1. Install Python dependencies
 
 `pip3 install requirements.txt`
 
-#### 3.2. Build the Frontend
+#### 4.2. Build the Frontend
 
 ```
 cd ./frontend
@@ -84,7 +104,7 @@ npm install
 npm run build
 ```
 
-#### 3.3. Install other dependencies
+#### 4.3. Install other dependencies
 
 - ffmpeg: For video / audio conversions
 - libmagic1: For filetype detection when there are no extensions
@@ -93,7 +113,7 @@ npm run build
 - pandoc: For document conversions (markdown, docx, html, etc.)
 - pango: Required by weasyprint for PDF generation
 
-#### 3.4. Spin up the app locally
+#### 4.4. Spin up the app locally
 
 `python3 backend/main.py`
 
