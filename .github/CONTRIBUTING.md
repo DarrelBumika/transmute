@@ -67,10 +67,10 @@ Examples:
 * `fix/job-progress`
 * `docs/api-clarification`
 
-### 3. Build and Run the Docker Image (Reccomended)
+### 3. Build and Run the Docker Image (Recommended)
 `docker compose -f docker-compose-dev.yml up -d`
 
-### 3. Alternatively, Run Directly (Not Reccomended)
+### 3. Alternatively, Run Directly (Not Recommended)
 
 #### 3.1. Install Python dependencies
 
