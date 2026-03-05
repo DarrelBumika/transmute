@@ -18,6 +18,10 @@ env:
   DOCKER_HUB_NAMESPACE: neonvariant
   DOCKER_HUB_REPOSITORY: transmute
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   security-scan:
     name: Security Scan
