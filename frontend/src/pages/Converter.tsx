@@ -6,6 +6,8 @@ import PreviewModal, { isPreviewable } from '../components/PreviewModal'
 interface PendingFile {
   file: FileInfo
   selectedFormat: string
+  status: 'pending' | 'failed'
+  errorMessage?: string
 }
 
 interface CompletedConversion {
@@ -65,6 +67,7 @@ function Converter() {
         return {
           file,
           selectedFormat,
+          status: 'pending',
         }
       })
       setPendingFiles(prev => [...newPendingFiles, ...prev])
@@ -114,7 +117,11 @@ function Converter() {
         ? userDefault
         : sortedFormats[0] || ''
 
-      const pending: PendingFile = { file: fileInfo, selectedFormat: defaultFormat }
+      const pending: PendingFile = {
+        file: fileInfo,
+        selectedFormat: defaultFormat,
+        status: 'pending',
+      }
 
       // Add to pending list immediately as each upload completes
       setPendingFiles((prev) => [...prev, pending])
@@ -163,7 +170,7 @@ function Converter() {
   const handleFormatChange = (fileId: string, format: string) => {
     setPendingFiles((prev) =>
       prev.map((pf) =>
-        pf.file.id === fileId ? { ...pf, selectedFormat: format } : pf
+        pf.file.id === fileId ? { ...pf, selectedFormat: format, status: 'pending', errorMessage: undefined } : pf
       )
     )
   }
@@ -193,47 +200,75 @@ function Converter() {
     setError(null)
 
     const filesToConvert = [...pendingFiles].filter(({ selectedFormat }) => !!selectedFormat)
+    const fileIdsToConvert = new Set(filesToConvert.map(({ file }) => file.id))
+
+    setPendingFiles((prev) =>
+      prev.map((pf) =>
+        fileIdsToConvert.has(pf.file.id)
+          ? { ...pf, status: 'pending', errorMessage: undefined }
+          : pf
+      )
+    )
 
     const promises = filesToConvert.map(async ({ file, selectedFormat }) => {
       const inputFormat = file.extension?.replace(/^\./, '') || ''
 
-      const response = await fetch('/api/conversions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: file.id,
-          input_format: inputFormat,
-          output_format: selectedFormat,
-        }),
-      })
+      try {
+        const response = await fetch('/api/conversions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: file.id,
+            input_format: inputFormat,
+            output_format: selectedFormat,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error(`Conversion failed for ${file.original_filename}: ${response.statusText}`)
+        if (!response.ok) {
+          let detail = response.statusText
+          try {
+            const errorData = await response.json()
+            detail = errorData.detail || detail
+          } catch {
+            // Fall back to status text when the response body is not JSON.
+          }
+          throw new Error(`Conversion failed for ${file.original_filename}: ${detail}`)
+        }
+
+        const data = await response.json()
+        const conversionInfo: ConversionInfo = {
+          id: data.id,
+          original_filename: data.original_filename,
+          media_type: data.media_type,
+          extension: data.extension,
+          size_bytes: data.size_bytes,
+          created_at: data.created_at,
+        }
+
+        const completed: CompletedConversion = { file, conversion: conversionInfo }
+
+        // Move to completed list immediately as it finishes
+        setCompletedConversions((prev) => [completed, ...prev])
+        setPendingFiles((prev) => prev.filter((pf) => pf.file.id !== file.id))
+
+        if (autoDownload) {
+          await handleDownload(conversionInfo)
+        }
+
+        return completed
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : `Conversion failed for ${file.original_filename}`
+        setPendingFiles((prev) =>
+          prev.map((pf) =>
+            pf.file.id === file.id
+              ? { ...pf, status: 'failed', errorMessage }
+              : pf
+          )
+        )
+        throw err
       }
-
-      const data = await response.json()
-      const conversionInfo: ConversionInfo = {
-        id: data.id,
-        original_filename: data.original_filename,
-        media_type: data.media_type,
-        extension: data.extension,
-        size_bytes: data.size_bytes,
-        created_at: data.created_at,
-      }
-
-      const completed: CompletedConversion = { file, conversion: conversionInfo }
-
-      // Move to completed list immediately as it finishes
-      setCompletedConversions((prev) => [completed, ...prev])
-      setPendingFiles((prev) => prev.filter((pf) => pf.file.id !== file.id))
-
-      if (autoDownload) {
-        await handleDownload(conversionInfo)
-      }
-
-      return completed
     })
 
     const results = await Promise.allSettled(promises)
@@ -246,8 +281,6 @@ function Converter() {
       setError(errors.join('; '))
     }
 
-    // Clear any remaining pending files (e.g. ones that failed)
-    setPendingFiles([])
     setConverting(false)
   }
 
@@ -449,6 +482,8 @@ function Converter() {
                   id: pf.file.id,
                   file: pf.file,
                   selectedFormat: pf.selectedFormat,
+                  status: pf.status,
+                  statusMessage: pf.errorMessage,
                   onFormatChange: (format: string) => handleFormatChange(pf.file.id, format),
                   onDelete: () => handleDelete(pf.file.id, true),
                   onPreview: isPreviewable(pf.file.media_type) ? () => setPreviewFile({ id: pf.file.id, filename: pf.file.original_filename, mediaType: pf.file.media_type }) : undefined,

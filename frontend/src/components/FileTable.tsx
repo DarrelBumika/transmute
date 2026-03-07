@@ -25,6 +25,8 @@ export interface FileTableRow {
   file: FileInfo
   conversion?: ConversionInfo
   selectedFormat?: string
+  status?: 'pending' | 'failed'
+  statusMessage?: string
   onFormatChange?: (format: string) => void
   onDelete?: () => void
   onDownload?: () => void
@@ -179,7 +181,7 @@ function FileTable({
           {sortedRows.map(row => (
             <tr
               key={row.id}
-              className={`border-t border-surface-dark bg-surface-light hover:bg-surface-dark/50 transition duration-100${
+              className={`border-t border-surface-dark ${row.status === 'failed' ? 'bg-primary/10 hover:bg-primary/15' : 'bg-surface-light hover:bg-surface-dark/50'} transition duration-100${
                 converting ? ' opacity-50 pointer-events-none' : ''
               }`}
             >
@@ -197,12 +199,26 @@ function FileTable({
                 </td>
               )}
               <td className="px-4 py-3">
-                <span
-                  className="font-medium text-text truncate block max-w-[16rem]"
-                  title={getDisplayFilename(row)}
-                >
-                  {getDisplayFilename(row)}
-                </span>
+                <div className="max-w-[16rem]">
+                  <span
+                    className="font-medium text-text truncate block"
+                    title={getDisplayFilename(row)}
+                  >
+                    {getDisplayFilename(row)}
+                  </span>
+                  {row.status === 'failed' && (
+                    <div className="mt-1">
+                      <span className="inline-block text-[0.65rem] font-semibold uppercase tracking-wide bg-primary/20 px-2 py-0.5 rounded text-primary-light">
+                        Failed
+                      </span>
+                      {row.statusMessage && (
+                        <p className="mt-1 text-xs text-primary-light/90 break-words" title={row.statusMessage}>
+                          {row.statusMessage}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                   {(row.conversion || row.selectedFormat) ? (
