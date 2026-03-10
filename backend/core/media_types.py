@@ -7,6 +7,7 @@ media_type_aliases = {
     'alac': 'm4a',
     'aif': 'aiff',
     'tif': 'tiff',
+    'toons': 'toon',
     'htm': 'html',
     'mpg': 'mpeg',
 }

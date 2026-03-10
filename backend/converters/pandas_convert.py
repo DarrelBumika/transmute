@@ -5,10 +5,29 @@ import tomllib
 
 import pandas as pd
 import pyreadstat
+import toons
 import tomli_w
 import yaml, json
 from typing import Optional
 from .converter_interface import ConverterInterface
+
+
+def _structured_data_to_dataframe(data):
+    if isinstance(data, list):
+        return pd.DataFrame(data)
+
+    if isinstance(data, dict):
+        if len(data) == 1:
+            only_key, only_value = next(iter(data.items()))
+            if isinstance(only_value, list):
+                if only_value and all(isinstance(item, dict) for item in only_value):
+                    return pd.DataFrame(only_value).add_prefix(f'{only_key}.')
+
+                return pd.DataFrame({only_key: only_value})
+
+        return pd.json_normalize(data)
+
+    return pd.DataFrame([data])
 
 class PandasConverter(ConverterInterface):
     supported_input_formats: set = {
@@ -30,6 +49,7 @@ class PandasConverter(ConverterInterface):
         'sav',     # read-only (SPSS)
         'xpt',     # read-only (SAS transport)
         'fwf',     # read-only (fixed-width)
+        'toon',
         'toml',
         'ini',
         'env',
@@ -48,6 +68,7 @@ class PandasConverter(ConverterInterface):
         'html',
         'ods',
         'sqlite',
+        'toon',
         'toml',
         'ini',
         'env',
@@ -103,26 +124,32 @@ class PandasConverter(ConverterInterface):
         if os.path.exists(output_file) and not overwrite:
             raise FileExistsError(f"Output file {output_file} already exists and overwrite is set to False.")
         
-        # Handle YAML <-> JSON <-> TOML conversions directly (preserve nested structure)
-        if self.input_type in ['yaml', 'json', 'toml'] and self.output_type in ['yaml', 'json', 'toml']:
+        # Handle structured document conversions directly to preserve nested structure.
+        if self.input_type in ['yaml', 'json', 'toml', 'toon'] and self.output_type in ['yaml', 'json', 'toml', 'toon']:
             if self.input_type == 'yaml':
-                with open(self.input_file, 'r') as f:
+                with open(self.input_file, 'r', encoding='utf-8') as f:
                     data = yaml.safe_load(f)
             elif self.input_type == 'toml':
                 with open(self.input_file, 'rb') as f:
                     data = tomllib.load(f)
+            elif self.input_type == 'toon':
+                with open(self.input_file, 'r', encoding='utf-8') as f:
+                    data = toons.load(f)
             else:  # json
-                with open(self.input_file, 'r') as f:
+                with open(self.input_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
             
             if self.output_type == 'yaml':
-                with open(output_file, 'w') as f:
+                with open(output_file, 'w', encoding='utf-8') as f:
                     yaml.dump(data, f, default_flow_style=False, sort_keys=False)
             elif self.output_type == 'toml':
                 with open(output_file, 'wb') as f:
                     tomli_w.dump(data, f)
+            elif self.output_type == 'toon':
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    toons.dump(data, f)
             else:  # json
-                with open(output_file, 'w') as f:
+                with open(output_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2)
             
             return [output_file]
@@ -134,14 +161,9 @@ class PandasConverter(ConverterInterface):
         elif self.input_type == 'xlsx':
             df = pd.read_excel(self.input_file)
         elif self.input_type == 'json':
-            with open(self.input_file, 'r') as f:
+            with open(self.input_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            # Try to convert to DataFrame - if it's a list of dicts, it works directly
-            if isinstance(data, list):
-                df = pd.DataFrame(data)
-            else:
-                # For nested structures, flatten them
-                df = pd.json_normalize(data)
+            df = _structured_data_to_dataframe(data)
         elif self.input_type == 'parquet':
             df = pd.read_parquet(self.input_file)
         elif self.input_type == 'feather':
@@ -161,6 +183,10 @@ class PandasConverter(ConverterInterface):
             df = pd.read_excel(self.input_file, engine='xlrd')
         elif self.input_type == 'jsonl':
             df = pd.read_json(self.input_file, lines=True)
+        elif self.input_type == 'toon':
+            with open(self.input_file, 'r', encoding='utf-8') as f:
+                data = toons.load(f)
+            df = _structured_data_to_dataframe(data)
         elif self.input_type == 'sqlite':
             conn = sqlite3.connect(self.input_file)
             tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
@@ -182,10 +208,7 @@ class PandasConverter(ConverterInterface):
         elif self.input_type == 'toml':
             with open(self.input_file, 'rb') as f:
                 data = tomllib.load(f)
-            if isinstance(data, list):
-                df = pd.DataFrame(data)
-            else:
-                df = pd.json_normalize(data)
+            df = _structured_data_to_dataframe(data)
         elif self.input_type == 'ini':
             config = configparser.ConfigParser()
             config.read(self.input_file)
@@ -196,7 +219,7 @@ class PandasConverter(ConverterInterface):
             df = pd.DataFrame(rows, columns=['section', 'key', 'value'])
         elif self.input_type == 'env':
             rows = []
-            with open(self.input_file, 'r') as f:
+            with open(self.input_file, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith('#'):
@@ -205,14 +228,9 @@ class PandasConverter(ConverterInterface):
                     rows.append({'key': key.strip(), 'value': value.strip()})
             df = pd.DataFrame(rows, columns=['key', 'value'])
         elif self.input_type == 'yaml':
-            with open(self.input_file, 'r') as f:
+            with open(self.input_file, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
-            # Try to convert to DataFrame - if it's a list of dicts, it works directly
-            if isinstance(data, list):
-                df = pd.DataFrame(data)
-            else:
-                # For nested structures, flatten them
-                df = pd.json_normalize(data)
+            df = _structured_data_to_dataframe(data)
         
         # Write DataFrame to output format
         if self.output_type == 'csv':
@@ -229,6 +247,9 @@ class PandasConverter(ConverterInterface):
             df.to_orc(output_file, index=False)
         elif self.output_type == 'jsonl':
             df.to_json(output_file, orient='records', lines=True)
+        elif self.output_type == 'toon':
+            with open(output_file, 'w', encoding='utf-8') as f:
+                toons.dump(df.to_dict(orient='records'), f)
         elif self.output_type == 'sqlite':
             conn = sqlite3.connect(output_file)
             df.to_sql('data', conn, index=False, if_exists='replace')
@@ -246,7 +267,7 @@ class PandasConverter(ConverterInterface):
         elif self.output_type == 'ods':
             df.to_excel(output_file, engine='odf', index=False)
         elif self.output_type == 'yaml':
-            with open(output_file, 'w') as f:
+            with open(output_file, 'w', encoding='utf-8') as f:
                 yaml.dump(df.to_dict(orient='records'), f, default_flow_style=False)
         elif self.output_type == 'toml':
             with open(output_file, 'wb') as f:
@@ -267,7 +288,7 @@ class PandasConverter(ConverterInterface):
             with open(output_file, 'w') as f:
                 config.write(f)
         elif self.output_type == 'env':
-            with open(output_file, 'w') as f:
+            with open(output_file, 'w', encoding='utf-8') as f:
                 if 'key' in df.columns and 'value' in df.columns:
                     for _, row in df.iterrows():
                         f.write(f"{row['key']}={row['value']}\n")
